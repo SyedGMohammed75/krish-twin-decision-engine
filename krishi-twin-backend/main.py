@@ -1,78 +1,59 @@
 import os
+import json
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
+from google.cloud import texttospeech
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Initialize FastAPI App
+# Point to J's credentials file
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-key.json"
+
 app = FastAPI(
-    title="Krishi-Twin Engine",
+    title="Krishi-Twin Decision Core",
     version="1.0.0",
-    description="Counterfactual Agro-Financial Simulation Middleware"
+    description="Counterfactual Agro-Financial Simulation Engine"
 )
 
-# Initialize Google Gen AI Client using key from .env
+# Initialize AI Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Initialize Cloud TTS Client
+tts_client = texttospeech.TextToSpeechClient()
+
 SYSTEM_INSTRUCTION = """
-You are the master agronomic intelligence engine of "Krishi-Twin," an automated decision simulation middleware for smallholder agriculture in India.
-
-Your primary objective is to convert crop health indicators, micro-soil parameters, and IMD/meteorological forecasts into structured counterfactual decision intelligence. You MUST NEVER output isolated diagnostic text or generic recommendations.
-
-Core Reasoning Rules:
-1. COUNTERFACTUAL SIMULATION: Analyze two distinct operational paths:
-   - Scenario A (Immediate Action): Executing typical or immediate intervention today.
-   - Scenario B (Deferred/Optimized Action): Postponing, modifying, or altering inputs based on soil absorption, micro-climate windows, and cost constraints.
-2. FINANCIAL QUANTIFICATION: Evaluate economic risks for both paths in Indian Rupees (₹/acre), taking into account chemical/fertilizer input costs, manual labor fees, pump electricity/diesel costs, and protected crop yield value.
-3. ENVIRONMENTAL RISK ASSESSMENT: Assess micro-environmental impact, including chemical wash-off likelihood, soil microbial toxicity, water table runoff, and plant stomatal absorption efficiency.
-4. VOICE ADVISORY GENERATION: Produce a voice_advisory_script that is STRICTLY 2 sentences long, written in plain, localized language accessible to low-literacy farmers.
+You are the Krishi-Twin Counterfactual Financial Engine.
+Analyze the provided farm payload.
+Compare Scenario A (Spray/Act Today) vs Scenario B (Wait 48 hours / Defer Action).
+Output a JSON object with these exact keys:
+- 'recommended_action' (String: 'SPRAY', 'WAIT', or 'IRRIGATE')
+- 'scenario_a_roi_inr' (String: Calculate the net financial impact in ₹)
+- 'scenario_b_roi_inr' (String: Calculate the net financial impact in ₹)
+- 'risk_factor' (String: Explanation of the weather, wash-off, or disease risk)
+- 'voice_script_2_sentences' (String: A simple, 2-sentence advisory for a low-literacy farmer)
 """
 
-# Define Pydantic Output Schemas for Gemini Enforced JSON
-class ScenarioDetails(BaseModel):
-    action_name: str = Field(..., description="Short title of the scenario action")
-    expected_efficacy_pct: int = Field(..., description="Expected efficacy percentage from 0 to 100")
-    financial_risk_rupees: str = Field(..., description="Estimated gain or loss in Indian Rupees (₹) per acre")
-    environmental_tradeoffs: str = Field(..., description="Analysis of wash-off, soil health, runoff, or absorption")
-
 class KrishiTwinResponse(BaseModel):
-    scenario_a_immediate: ScenarioDetails
-    scenario_b_deferred: ScenarioDetails
-    voice_advisory_script: str = Field(..., description="Strictly 2 short sentences in plain text suitable for voice conversion")
+    recommended_action: str
+    scenario_a_roi_inr: str
+    scenario_b_roi_inr: str
+    risk_factor: str
+    voice_script_2_sentences: str
 
-# Define API Request Schema
-class SimulationRequest(BaseModel):
-    crop: str = Field(..., json_schema_extra={"example": "Paddy Rice"})
-    location: str = Field(..., json_schema_extra={"example": "Andhra Pradesh"})
-    symptoms_or_issue: str = Field(..., json_schema_extra={"example": "Yellow leaf spots and lesions (Leaf Blight)"})
-    soil_moisture_pct: float = Field(..., json_schema_extra={"example": 82.0})
-    imd_weather_forecast: dict = Field(
-        ..., 
-        json_schema_extra={"example": {"next_24h_rain_mm": 40, "humidity_pct": 85, "temp_c": 30}}
-    )
-    estimated_input_costs_rupees: float = Field(..., json_schema_extra={"example": 2000.0})
+class TTSRequest(BaseModel):
+    text: str = Field(..., json_schema_extra={"example": "Do not spray medicine today because heavy rain will wash it away."})
+    language_code: str = Field("hi-IN", json_schema_extra={"example": "hi-IN"})
 
 @app.post("/api/v1/simulate", response_model=KrishiTwinResponse)
-async def run_counterfactual_simulation(payload: SimulationRequest):
+async def run_simulation(payload: dict):
     try:
-        user_prompt = f"""
-        Execute a counterfactual simulation for the following field parameters:
-        - Crop: {payload.crop}
-        - Location: {payload.location}
-        - Diagnostic Issue: {payload.symptoms_or_issue}
-        - Current Soil Moisture: {payload.soil_moisture_pct}%
-        - IMD Weather Forecast: {payload.imd_weather_forecast}
-        - Base Input Cost (Fungicide/Labor): ₹{payload.estimated_input_costs_rupees}
-        """
-
-        # Updated model parameter to gemini-3.6-flash
         response = client.models.generate_content(
             model="gemini-3.6-flash",
-            contents=user_prompt,
+            contents=json.dumps(payload),
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_INSTRUCTION,
                 response_mime_type="application/json",
@@ -80,11 +61,24 @@ async def run_counterfactual_simulation(payload: SimulationRequest):
                 temperature=0.2,
             ),
         )
-        
-        # Parse output directly into Pydantic model
-        structured_data = KrishiTwinResponse.model_validate_json(response.text)
-        return structured_data
+        return KrishiTwinResponse.model_validate_json(response.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/v1/tts")
+async def generate_tts(payload: TTSRequest):
+    try:
+        synthesis_input = texttospeech.SynthesisInput(text=payload.text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code=payload.language_code,
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+
+        response = tts_client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
+        )
+        return Response(content=response.audio_content, media_type="audio/mpeg")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
