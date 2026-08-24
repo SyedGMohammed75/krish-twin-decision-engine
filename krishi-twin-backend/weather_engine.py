@@ -2,29 +2,22 @@ import requests
 import json
 from datetime import datetime
 
-# 1. The Madurai Farm Coordinates
 lat = 9.8821
 lon = 78.0815
+mean_ndvi = 0.37
 
-# 2. The NDVI we just got from Google Earth Engine
-mean_ndvi = 0.37 
-
-# 3. Fetch Local Weather via Open-Meteo API
+# 1. Fetch live meteorological telemetry
 url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=precipitation,precipitation_probability,wind_speed_10m&forecast_days=2&timezone=auto"
 response = requests.get(url)
 weather_data = response.json().get("hourly", {})
 
-# 4. Calculate Risk Metrics (Next 24 Hours)
-# Summing up the rain (in mm) and finding the max wind/probability
 rain_24h_mm = sum(weather_data.get("precipitation", [])[:24])
 max_rain_prob = max(weather_data.get("precipitation_probability", [])[:24], default=0)
 max_wind_kmh = max(weather_data.get("wind_speed_10m", [])[:24], default=0)
 
-# Determine Wash-Off Risk 
-# If it rains more than 10mm or there is a high chance of rain, spraying is a bad idea.
 wash_off_risk = "HIGH" if rain_24h_mm > 10.0 or max_rain_prob > 70 else "LOW"
 
-# 5. Build the Final Krishi-Twin JSON Payload
+# 2. Build live dynamic payload
 payload = {
     "engine": "Krishi-Twin-Decision-Core",
     "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -50,6 +43,9 @@ payload = {
     }
 }
 
-# Print the payload
-print("Krishi-Twin Unified Payload Ready:")
-print(json.dumps(payload, indent=2))
+# 3. POST live payload directly to backend
+server_url = "http://localhost:8080/api/v1/simulate"
+sim_response = requests.post(server_url, json=payload)
+
+print("\n--- Live Simulation Result from Backend ---")
+print(json.dumps(sim_response.json(), indent=2))
