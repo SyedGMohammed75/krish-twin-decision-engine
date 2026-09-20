@@ -1,41 +1,34 @@
 import os
 import json
+import base64
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
-from google.cloud import translate
+from google.cloud import translate_v2 as translate
 from google.cloud import texttospeech
 
-# Load environment variables
 load_dotenv()
-
-# Point to J's credentials for GCP services (TTS & Translation)
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-key.json"
 
 app = FastAPI(
     title="Krishi-Twin Decision Core",
-    version="1.0.0",
-    description="Counterfactual Agro-Financial Simulation Engine"
+    version="1.2.0",
+    description="Multimodal Agro-Financial Counterfactual Engine"
 )
 
-# Initialize Clients
 ai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-translate_client = translate.TranslationServiceClient()
+translate_client = translate.Client()
 tts_client = texttospeech.TextToSpeechClient()
 
 SYSTEM_INSTRUCTION = """
-You are the Krishi-Twin Counterfactual Financial Engine. 
-Analyze the provided farm payload. 
-Compare Scenario A (Spray/Act Today) vs Scenario B (Wait 48 hours / Defer Action).
-Output a JSON object with these exact keys:
-- 'recommended_action' (String: 'SPRAY', 'WAIT', or 'IRRIGATE')
-- 'scenario_a_roi_inr' (String: Calculate the net financial impact in ₹)
-- 'scenario_b_roi_inr' (String: Calculate the net financial impact in ₹)
-- 'risk_factor' (String: Explanation of the weather, wash-off, or disease risk)
-- 'voice_script_2_sentences' (String: A simple, 2-sentence advisory for a low-literacy farmer)
+You are the Krishi-Twin Counterfactual Agronomic & Financial Engine.
+Analyze the provided farm payload and any attached crop imagery.
+1. VISUAL DIAGNOSIS: Inspect leaf imagery to visually confirm disease symptoms and spot lesions before executing simulations.
+2. COUNTERFACTUAL SIMULATION: Compare Scenario A (Act Today) vs Scenario B (Wait 48 hours / Defer Action).
+Output a JSON object strictly adhering to the response schema.
 """
 
 # Regional voice profiles for TTS
@@ -47,9 +40,16 @@ REGIONAL_VOICES = {
     'en': {'language_code': 'en-IN', 'name': 'en-IN-Neural2-A', 'ssml_gender': texttospeech.SsmlVoiceGender.FEMALE}
 }
 
-# Response Schemas
+class MultimodalSimulationRequest(BaseModel):
+    farm_profile: dict
+    geospatial_telemetry: dict
+    meteorological_risk: dict
+    financial_inputs: dict
+    image_base64: str | None = Field(default=None, description="Base64 string of crop leaf image")
+
 class KrishiTwinResponse(BaseModel):
     recommended_action: str
+    visual_diagnosis_confirmation: str
     scenario_a_roi_inr: str
     scenario_b_roi_inr: str
     risk_factor: str
@@ -57,16 +57,30 @@ class KrishiTwinResponse(BaseModel):
 
 class MultilingualTTSRequest(BaseModel):
     text: str = Field(..., json_schema_extra={"example": "Do not spray medicine today because heavy rain will wash it away."})
-    target_lang: str = Field("hi", json_schema_extra={"example": "hi"})  # 'hi', 'te', 'mr', 'ta', 'en'
+    target_lang: str = Field("hi", json_schema_extra={"example": "hi"})
 
 
 @app.post("/api/v1/simulate", response_model=KrishiTwinResponse)
-async def run_simulation(payload: dict):
-    """Ingests farm telemetry (from S) and generates counterfactual simulation via Gemini 3.6 Flash."""
+async def run_multimodal_simulation(payload: MultimodalSimulationRequest):
     try:
+        telemetry_json = json.dumps({
+            "farm_profile": payload.farm_profile,
+            "geospatial_telemetry": payload.geospatial_telemetry,
+            "meteorological_risk": payload.meteorological_risk,
+            "financial_inputs": payload.financial_inputs
+        })
+        
+        contents = [f"Farm Telemetry Payload:\n{telemetry_json}"]
+
+        if payload.image_base64:
+            image_bytes = base64.b64decode(payload.image_base64)
+            contents.append(
+                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+            )
+
         response = ai_client.models.generate_content(
             model="gemini-3.6-flash",
-            contents=json.dumps(payload),
+            contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_INSTRUCTION,
                 response_mime_type="application/json",
@@ -74,35 +88,27 @@ async def run_simulation(payload: dict):
                 temperature=0.2,
             ),
         )
+
         return KrishiTwinResponse.model_validate_json(response.text)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/api/v1/tts")
 async def generate_multilingual_tts(payload: MultilingualTTSRequest):
-    """Translates advisory text into target regional language and synthesizes spoken MP3 audio."""
     try:
         translated_text = payload.text
-
-        # 1. Translate text if target language is not English
+        
         if payload.target_lang != 'en':
-            parent = f"projects/{os.getenv('GOOGLE_CLOUD_PROJECT', 'krishi-twin-audio')}/locations/global"
-            response = translate_client.translate_text(
-                request={
-                    "parent": parent,
-                    "contents": [payload.text],
-                    "mime_type": "text/plain",
-                    "source_language_code": "en",
-                    "target_language_code": payload.target_lang,
-                }
+            translation = translate_client.translate(
+                payload.text,
+                target_language=payload.target_lang,
+                source_language='en'
             )
-            translated_text = response.translations[0].translated_text
+            translated_text = translation['translatedText']
 
-        # 2. Select voice profile
         voice_config = REGIONAL_VOICES.get(payload.target_lang, REGIONAL_VOICES['en'])
 
-        # 3. Synthesize speech via Google Cloud TTS
         synthesis_input = texttospeech.SynthesisInput(text=translated_text)
         voice = texttospeech.VoiceSelectionParams(
             language_code=voice_config['language_code'],
@@ -120,7 +126,6 @@ async def generate_multilingual_tts(payload: MultilingualTTSRequest):
             audio_config=audio_config
         )
 
-        # Return clean audio stream without non-ASCII header
         return Response(
             content=tts_response.audio_content, 
             media_type="audio/mpeg"
