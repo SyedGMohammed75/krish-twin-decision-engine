@@ -2,7 +2,10 @@ import os
 from google.cloud import translate_v2 as translate
 from google.cloud import texttospeech
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcp-key.json"
+# Safe GCP Credentials Initialization
+key_path = "gcp-key.json"
+if os.path.exists(key_path):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
 
 # Voice Configuration Matrix
 REGIONAL_VOICES = {
@@ -15,8 +18,17 @@ REGIONAL_VOICES = {
     'en': {'language_code': 'en-IN', 'name': 'en-IN-Neural2-A', 'ssml_gender': texttospeech.SsmlVoiceGender.FEMALE}
 }
 
-translate_client = translate.Client()
-tts_client = texttospeech.TextToSpeechClient()
+try:
+    translate_client = translate.Client()
+except Exception as e:
+    print(f"Warning initializing Translate Client: {e}")
+    translate_client = None
+
+try:
+    tts_client = texttospeech.TextToSpeechClient()
+except Exception as e:
+    print(f"Warning initializing TTS Client: {e}")
+    tts_client = None
 
 def resolve_language_from_coordinates(lat: float, lon: float) -> str:
     """Geofences GPS coordinates to the primary regional language code."""
@@ -34,6 +46,9 @@ def resolve_language_from_coordinates(lat: float, lon: float) -> str:
 
 def process_advisory_audio_by_coordinates(raw_text: str, lat: float, lon: float) -> dict:
     """Dynamically translates text based on map location and returns synthesized audio."""
+    if not tts_client or not translate_client:
+        raise RuntimeError("GCP Services not configured.")
+
     target_lang = resolve_language_from_coordinates(lat, lon)
     translated_text = raw_text
 

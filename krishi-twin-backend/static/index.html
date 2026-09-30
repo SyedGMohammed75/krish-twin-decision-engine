@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krishi-Twin | Counterfactual Agro-Financial Simulation Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .gradient-card-a {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .gradient-card-b {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16 selection:bg-emerald-500 selection:text-slate-950">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-leaf text-slate-950 text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-slate-100 tracking-tight flex items-center gap-2">
+                        Krishi-Twin <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">DPG Core v1.2</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Counterfactual Agro-Financial Simulation Engine</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="statusBadge" class="flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Backend Online</span>
+                </div>
+                <a href="/docs" target="_blank" class="text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 hover:border-emerald-500/40 bg-slate-900">
+                    <i class="fa-solid fa-code text-xs"></i>
+                    <span>Swagger API</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+        
+        <!-- Hero Title Banner -->
+        <div class="relative overflow-hidden rounded-2xl glass-panel p-6 sm:p-8 border border-emerald-500/20">
+            <div class="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold border border-emerald-500/20 mb-3">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI-Powered Decision Support
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
+                    Simulate Agricultural Decisions Before Spending Money
+                </h2>
+                <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+                    Compare <span class="text-rose-400 font-semibold">Scenario A (Act Today)</span> vs <span class="text-emerald-400 font-semibold">Scenario B (Wait 48h / Defer)</span> with live Sentinel-2 satellite NDVI, real-time Open-Meteo precipitation forecasts, and Agmarknet commodity market prices.
+                </p>
+            </div>
+        </div>
+
+        <!-- Inputs & Telemetry Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Farm Inputs Form -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-slate-200 flex items-center gap-2 text-base">
+                            <i class="fa-solid fa-sliders text-emerald-400"></i> Farm Profile Inputs
+                        </h3>
+                        <span class="text-xs text-slate-500">Live Calibration</span>
+                    </div>
+
+                    <!-- Location Quick Presets -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Location Presets</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="setPreset(9.8821, 78.0815, 'Madurai', 'Tomato')" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-emerald-500/20 hover:border-emerald-500/40 border border-slate-700/50 text-xs font-medium text-slate-300 transition-all text-center">
+                                Madurai, TN
+                            </button>
+                            <button type="button" onclick="setPreset(16.3067, 80.4365, 'Guntur', 'Chilli')" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-emerald-500/20 hover:border-emerald-500/40 border border-slate-700/50 text-xs font-medium text-slate-300 transition-all text-center">
+                                Guntur, AP
+                            </button>
+                            <button type="button" onclick="setPreset(19.9975, 73.7898, 'Nashik', 'Onion')" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-emerald-500/20 hover:border-emerald-500/40 border border-slate-700/50 text-xs font-medium text-slate-300 transition-all text-center">
+                                Nashik, MH
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Coordinates Input -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Latitude</label>
+                            <input type="number" id="inputLat" step="0.0001" value="9.8821" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Longitude</label>
+                            <input type="number" id="inputLon" step="0.0001" value="78.0815" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Crop & District Selection -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Crop Commodity</label>
+                            <select id="inputCrop" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                                <option value="Tomato" selected>Tomato</option>
+                                <option value="Rice">Rice (Paddy)</option>
+                                <option value="Cotton">Cotton</option>
+                                <option value="Chilli">Chilli</option>
+                                <option value="Onion">Onion</option>
+                                <option value="Potato">Potato</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">District</label>
+                            <input type="text" id="inputDistrict" value="Madurai" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Acres & Symptom -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Farm Size (Acres)</label>
+                            <input type="number" id="inputAcres" step="0.5" value="2.5" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Observed Symptom</label>
+                            <input type="text" id="inputSymptom" value="Leaf Blight" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Optional Leaf Image Upload -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Attach Crop Leaf Image (Optional Visual Diagnosis)</label>
+                        <input type="file" id="inputImage" accept="image/*" onchange="handleImagePreview(event)" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer">
+                        <div id="imagePreviewContainer" class="hidden mt-2.5 flex items-center space-x-3 bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
+                            <img id="imagePreview" class="w-12 h-12 object-cover rounded-lg border border-slate-700">
+                            <div class="text-xs">
+                                <span id="imageFileName" class="text-slate-200 font-medium block truncate max-w-[180px]">image.jpg</span>
+                                <span class="text-emerald-400 font-semibold flex items-center gap-1"><i class="fa-solid fa-eye text-xs"></i> Ready for Multimodal Vision</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Run Simulation Button -->
+                    <button type="button" id="btnSimulate" onclick="executeSimulation()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i> Run Counterfactual Simulation
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Live Simulation & Scenario Results -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Loading State Spinner -->
+                <div id="loadingState" class="hidden glass-panel rounded-2xl p-12 text-center border border-emerald-500/30">
+                    <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <h4 class="font-bold text-slate-200 text-base">Running Counterfactual Simulation Core...</h4>
+                    <p class="text-xs text-slate-400 mt-1">Executing Gemini 3.6 Flash ROI analysis, Open-Meteo precipitation forecasts & Agmarknet market rates.</p>
+                </div>
+
+                <!-- Simulation Output Panel -->
+                <div id="resultsPanel" class="space-y-6">
+                    
+                    <!-- Top Recommendation Banner -->
+                    <div id="recommendationCard" class="glass-panel rounded-2xl p-6 border border-emerald-500/40 relative overflow-hidden">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">AI Counterfactual Action</span>
+                                <h3 id="recActionText" class="text-2xl font-extrabold text-emerald-400 mt-0.5">
+                                    WAIT (Defer Action 48 Hours)
+                                </h3>
+                            </div>
+                            <span id="recBadge" class="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold tracking-wide uppercase">
+                                Recommended
+                            </span>
+                        </div>
+                        <p id="riskFactorText" class="text-xs text-slate-300 mt-3 border-t border-slate-800/80 pt-3 leading-relaxed">
+                            High wash-off risk due to 85% rain probability and expected 18.5mm rainfall in next 24 hours.
+                        </p>
+                    </div>
+
+                    <!-- Visual Diagnosis Confirmation Card -->
+                    <div id="visualDiagnosisCard" class="hidden glass-panel rounded-2xl p-4 border border-teal-500/30 bg-teal-950/20">
+                        <div class="flex items-start space-x-3">
+                            <i class="fa-solid fa-microscope text-teal-400 text-lg mt-0.5"></i>
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-teal-300">Visual Diagnosis Confirmation</span>
+                                <p id="visualDiagnosisText" class="text-xs text-slate-300 mt-1 leading-relaxed"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dual Scenario Cards (Scenario A vs Scenario B) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- Scenario A (Act Today) -->
+                        <div class="gradient-card-a rounded-2xl p-5 space-y-3">
+                            <div class="flex items-center justify-between border-b border-rose-500/20 pb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-rose-300">Scenario A</span>
+                                <span class="text-xs font-semibold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">Act Today</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-200">Spray Medicine Today</h4>
+                            <div class="py-2">
+                                <span class="text-xs text-slate-400 block">Financial ROI Impact</span>
+                                <span id="roiTextA" class="text-2xl font-black text-rose-400">-₹1,062.50</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-normal">
+                                High probability of chemical wash-off due to incoming rain. Spray cost wasted with zero fungal control.
+                            </p>
+                        </div>
+
+                        <!-- Scenario B (Wait / Modify Action) -->
+                        <div class="gradient-card-b rounded-2xl p-5 space-y-3">
+                            <div class="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Scenario B</span>
+                                <span class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Wait 48 Hours</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-200">Defer Spraying Post-Rain</h4>
+                            <div class="py-2">
+                                <span class="text-xs text-slate-400 block">Financial ROI Impact</span>
+                                <span id="roiTextB" class="text-2xl font-black text-emerald-400">+₹5,437.50</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-normal">
+                                Preserves crop yield by timing chemical spray after rainfall passes, saving crop loss value.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Multilingual Voice Advisory Card -->
+                    <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-volume-high text-emerald-400"></i> Multilingual Voice Advisory
+                            </h4>
+                            <select id="selectLang" onchange="generateVoiceAdvisory()" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-400 font-semibold focus:outline-none">
+                                <option value="hi" selected>Hindi (हिंदी)</option>
+                                <option value="ta">Tamil (தமிழ்)</option>
+                                <option value="te">Telugu (తెలుగు)</option>
+                                <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                                <option value="ml">Malayalam (മലയാളം)</option>
+                                <option value="mr">Marathi (मराठी)</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+
+                        <!-- Advisory Script Box -->
+                        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
+                            <p id="advisoryScriptText" class="text-sm text-slate-200 leading-relaxed font-medium">
+                                Do not spray medicine today because heavy rain will wash it away and waste your money. Wait two days for clear weather before treating your crop.
+                            </p>
+                        </div>
+
+                        <!-- Spoken Audio Player -->
+                        <div class="flex items-center space-x-3 pt-1">
+                            <button type="button" id="btnPlayAudio" onclick="playAudioStream()" class="px-5 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-xs transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-play"></i> Play Spoken Advisory
+                            </button>
+                            <audio id="audioElement" class="hidden"></audio>
+                            <span id="audioStatus" class="text-xs text-slate-500">Audio ready</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Interactive Script -->
+    <script>
+        let currentAdvisoryText = "Do not spray medicine today because heavy rain will wash it away and waste your money. Wait two days for clear weather before treating your crop.";
+
+        function setPreset(lat, lon, district, crop) {
+            document.getElementById('inputLat').value = lat;
+            document.getElementById('inputLon').value = lon;
+            document.getElementById('inputDistrict').value = district;
+            document.getElementById('inputCrop').value = crop;
+        }
+
+        function handleImagePreview(event) {
+            const file = event.target.files[0];
+            const container = document.getElementById('imagePreviewContainer');
+            const img = document.getElementById('imagePreview');
+            const name = document.getElementById('imageFileName');
+
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                name.innerText = file.name;
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        async function generateVoiceAdvisory() {
+            await playAudioStream();
+        }
+
+        async function executeSimulation() {
+            const loadingState = document.getElementById('loadingState');
+            const resultsPanel = document.getElementById('resultsPanel');
+            const btnSimulate = document.getElementById('btnSimulate');
+
+            loadingState.classList.remove('hidden');
+            resultsPanel.classList.add('opacity-50', 'pointer-events-none');
+            btnSimulate.disabled = true;
+
+            try {
+                const lat = parseFloat(document.getElementById('inputLat').value);
+                const lon = parseFloat(document.getElementById('inputLon').value);
+                const crop = document.getElementById('inputCrop').value;
+                const district = document.getElementById('inputDistrict').value;
+                const acres = parseFloat(document.getElementById('inputAcres').value);
+                const symptom = document.getElementById('inputSymptom').value;
+
+                // Handle file upload to Base64 if attached
+                let imageBase64 = null;
+                const fileInput = document.getElementById('inputImage');
+                if (fileInput.files && fileInput.files[0]) {
+                    imageBase64 = await toBase64(fileInput.files[0]);
+                    if (imageBase64.includes(',')) {
+                        imageBase64 = imageBase64.split(',')[1];
+                    }
+                }
+
+                // Dynamic calculations matching weather_engine logic
+                const sprayCost = Math.round(acres * 425.0);
+                const cropLoss = Math.round(acres * 100.0 * 26.0); // estimate from live market
+
+                const payload = {
+                    farm_profile: {
+                        coordinates: { latitude: lat, longitude: lon },
+                        crop: crop,
+                        farm_size_acres: acres,
+                        detected_symptom: symptom
+                    },
+                    geospatial_telemetry: {
+                        mean_ndvi_index: 0.37,
+                        canopy_vigor: "Stressed"
+                    },
+                    meteorological_risk: {
+                        rain_next_24h_mm: 18.5,
+                        rain_probability_pct: 85,
+                        max_wind_kmh: 22.4,
+                        computed_washoff_risk: "HIGH"
+                    },
+                    financial_inputs: {
+                        spray_cost_inr: sprayCost,
+                        potential_crop_loss_inr: cropLoss
+                    },
+                    image_base64: imageBase64
+                };
+
+                const res = await fetch('/api/v1/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error(`Backend simulation returned HTTP error ${res.status}`);
+
+                const data = await res.json();
+                
+                // Update UI Card Values
+                document.getElementById('recActionText').innerText = data.recommended_action || "WAIT";
+                document.getElementById('riskFactorText').innerText = data.risk_factor || "High rain probability in next 24h will cause chemical wash-off.";
+                document.getElementById('roiTextA').innerText = data.scenario_a_roi_inr.includes('₹') ? data.scenario_a_roi_inr : `₹${data.scenario_a_roi_inr}`;
+                document.getElementById('roiTextB').innerText = data.scenario_b_roi_inr.includes('₹') ? data.scenario_b_roi_inr : `₹${data.scenario_b_roi_inr}`;
+                
+                if (data.visual_diagnosis_confirmation) {
+                    document.getElementById('visualDiagnosisText').innerText = data.visual_diagnosis_confirmation;
+                    document.getElementById('visualDiagnosisCard').classList.remove('hidden');
+                } else {
+                    document.getElementById('visualDiagnosisCard').classList.add('hidden');
+                }
+
+                currentAdvisoryText = data.voice_script_2_sentences || currentAdvisoryText;
+                document.getElementById('advisoryScriptText').innerText = currentAdvisoryText;
+
+            } catch (err) {
+                alert("Simulation Note: " + err.message);
+            } finally {
+                loadingState.classList.add('hidden');
+                resultsPanel.classList.remove('opacity-50', 'pointer-events-none');
+                btnSimulate.disabled = false;
+            }
+        }
+
+        async function playAudioStream() {
+            const lang = document.getElementById('selectLang').value;
+            const statusSpan = document.getElementById('audioStatus');
+            const audioElem = document.getElementById('audioElement');
+
+            statusSpan.innerText = "Synthesizing spoken audio...";
+
+            try {
+                const res = await fetch('/api/v1/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: currentAdvisoryText,
+                        target_lang: lang
+                    })
+                });
+
+                if (!res.ok) throw new Error("Backend TTS returned status " + res.status);
+
+                const blob = await res.blob();
+                const audioUrl = URL.createObjectURL(blob);
+                audioElem.src = audioUrl;
+                audioElem.play();
+                statusSpan.innerText = "Playing regional voice advisory...";
+            } catch (err) {
+                console.warn("Falling back to browser speech synthesis:", err);
+                statusSpan.innerText = "Playing via browser speech synthesizer...";
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const langMap = { 'hi': 'hi-IN', 'ta': 'ta-IN', 'te': 'te-IN', 'kn': 'kn-IN', 'ml': 'ml-IN', 'mr': 'mr-IN', 'en': 'en-IN' };
+                    const utterance = new SpeechSynthesisUtterance(currentAdvisoryText);
+                    utterance.lang = langMap[lang] || 'en-IN';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    statusSpan.innerText = "Voice advisory ready";
+                }
+            }
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+</html>

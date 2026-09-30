@@ -59,19 +59,30 @@ print("Initializing Krishi-Twin Automated Scenario Runner...\n" + "="*50)
 for case in scenarios:
     print(f"\nRunning {case['scenario_name']}...")
     
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=json.dumps(case),
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            system_instruction=system_instruction
-        )
-    )
+    max_retries = 3
+    response = None
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=json.dumps(case),
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    system_instruction=system_instruction
+                )
+            )
+            break
+        except Exception as e:
+            if ("503" in str(e) or "UNAVAILABLE" in str(e)) and attempt < max_retries - 1:
+                import time
+                time.sleep(2 * (attempt + 1))
+                continue
+            raise e
     
     # Parse and print the AI's JSON response cleanly
     result = json.loads(response.text)
     print(f"Action: {result['recommended_action']}")
-    print(f"Scenario A (Act) ROI: ₹{result['scenario_a_roi_inr']}")
-    print(f"Scenario B (Wait) ROI: ₹{result['scenario_b_roi_inr']}")
+    print(f"Scenario A (Act) ROI: Rs. {result['scenario_a_roi_inr']}")
+    print(f"Scenario B (Wait) ROI: Rs. {result['scenario_b_roi_inr']}")
     print(f"Advisory: {result['voice_script_2_sentences']}")
     print("-" * 50)
